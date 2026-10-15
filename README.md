@@ -4,13 +4,13 @@ Code for **VolETA++: A Fully Automatic Depth-Free Radiance-Field Framework for F
 
 This repository is a snapshot of the VolETA code base (release 0.0.3, March 2025), the version used for VolETA++. The code base was later extended for RASS (NeurIPS 2026); that version is at [github.com/GCVCG/RASS](https://github.com/GCVCG/RASS).
 
+> **Components in the VolETA repository.** Keyframe selection (`key_frame_extraction.sh`, with blur filtering in `blur_fft/` and near-duplicate removal in `imgdp.py`) and featuremetric pose estimation (`pixelsfm.py`) are not in this repository. Use them from [github.com/GCVCG/VolETA-MetaFood](https://github.com/GCVCG/VolETA-MetaFood).
+
 ## Contents
 
 - `scripts/`: pipeline stages (COLMAP, FoodMem masks, NeuS2 and Instant-NGP training, scaling, volume estimation).
 - `src/`: pose conversion, checkerboard scaling (`src/pose/find_scale.py`), mesh clean-up, scaling and volume computation.
 - `docker/`: Dockerfiles for COLMAP, PixSfM, Pre-NeRF 360 and the VolETA environment (see `docker/README.md`).
-
-The front end, keyframe selection (blur filtering with `blur_fft/` and near-duplicate removal with `imgdp.py`, run by `key_frame_extraction.sh`) and featuremetric pose estimation (`pixelsfm.py`), is in the VolETA repository: [github.com/GCVCG/VolETA-MetaFood](https://github.com/GCVCG/VolETA-MetaFood).
 
 ## Acknowledgement of third-party code
 
