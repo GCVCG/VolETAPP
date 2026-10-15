@@ -1,3 +1,7 @@
+# Adapted from the corner-matched scaling of the ININ-VIAUN team (HR-CMS, MetaFood CVPR 2024):
+# https://github.com/BITyia/cvpr-metafood/blob/main/scale_estimate/find_scale.py
+# Changes: connected-component labelling and convex hulls isolate the checkerboard before
+# corner detection. This file is not covered by the licence of this repository.
 import os
 import cv2
 import struct
