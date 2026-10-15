@@ -10,6 +10,8 @@ This repository is a snapshot of the VolETA code base (release 0.0.3, March 2025
 - `src/`: pose conversion, checkerboard scaling (`src/pose/find_scale.py`), mesh clean-up, scaling and volume computation.
 - `docker/`: Dockerfiles for COLMAP, PixSfM, Pre-NeRF 360 and the VolETA environment (see `docker/README.md`).
 
+The front end, keyframe selection (blur filtering with `blur_fft/` and near-duplicate removal with `imgdp.py`, run by `key_frame_extraction.sh`) and featuremetric pose estimation (`pixelsfm.py`), is in the VolETA repository: [github.com/GCVCG/VolETA-MetaFood](https://github.com/GCVCG/VolETA-MetaFood).
+
 ## Acknowledgement of third-party code
 
 `src/pose/find_scale.py` is adapted from the corner-matched scaling of the ININ-VIAUN team (HR-CMS in the MetaFood CVPR 2024 challenge report), published at [github.com/BITyia/cvpr-metafood](https://github.com/BITyia/cvpr-metafood) (`scale_estimate/find_scale.py`). Our changes add connected-component labelling and convex hulls to isolate the checkerboard before corner detection. The original repository states no licence; that file remains under its authors' terms and is not covered by the licence of this repository.
