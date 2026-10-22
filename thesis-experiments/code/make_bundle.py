@@ -1,4 +1,5 @@
-"""Copy the inputs of both configurations into bundle/inputs/{c1,c2}/ITEM (transforms.json plus the frames it uses).
+"""Copy the inputs of configurations c1 and c2 into bundle/inputs/{c1,c2}/ITEM (transforms.json plus the frames it
+uses); with the environment variable BUNDLE=c3, build c3 instead (bundle_c3 below).
 Frames listed in a transforms.json but missing on disk are dropped and reported (C1 item 7: 070.png, 071.png)."""
 import json, os, shutil
 

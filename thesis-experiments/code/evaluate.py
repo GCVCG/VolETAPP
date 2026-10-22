@@ -1,14 +1,15 @@
-"""Metric volumes of a configuration and their match with the published VolETA++ per-item errors.
+"""Metric volumes of a configuration with the regenerated checkerboard scales, against the published VolETA++ errors.
 
-Scale per item: ave = l_square / med(d), metres per COLMAP unit of the dense model (find_scale_headless.py, phi = 240);
+Scale per item (scales.json): ave = l_square / med(d), metres per COLMAP unit of the dense model, found with a
+headless copy of src/pose/find_scale.py (find_scale-headless.patch) at the threshold phi recorded per item;
 k = NeuS2 units per COLMAP unit (colmap_to_nerf.py). Two readings of the scale step are compared:
-  paper: s = ave / k             (supplementary of P4: "convert the unitless NeRF reconstruction into metres")
+  paper: s = ave / k             (supplementary of VolETA++: "convert the unitless NeRF reconstruction into metres")
   code:  s = ave * (1 + 0.15 + 0.5)   (released find_scale.py, applied to NeuS2 units)
 Volume in cm3 = raw NeuS2 volume * s**3 * 1e6, as the challenge evaluation (trimesh volume * 1e6).
 
-usage: python evaluate.py results_c2.csv scales_c2.log k_c2.log
+usage (from the folder above code/): python code/evaluate.py runs_c2_h200.csv scales.json
 """
-import ast, csv, json, re, statistics as st, sys
+import csv, json, statistics as st, sys
 
 GT = {"1": 38.53, "2": 280.36, "3": 249.65, "4": 295.13, "5": 392.58, "6": 218.31, "7": 368.77, "8": 173.13,
       "9": 232.74, "10": 163.23, "11": 85.18, "13": 308.28, "14": 589.82}  # P3 Table 1 (facts-p3-voltex.md)
@@ -16,18 +17,12 @@ PUBLISHED_APE = {"1": 3.971, "2": 0.671, "3": 1.607, "4": 8.611, "5": 6.359, "6"
                  "9": 1.337, "10": 4.201, "11": 2.137, "13": 1.933, "14": 8.267}  # P4 supplementary (stats_lineage.py)
 
 
-def load(results, scales, ks):
+def load(results, scales):
     raw = {}
     for r in csv.DictReader(open(results)):
         raw.setdefault(r["item"], []).append(float(r["volume_raw"]))
-    ave = {}
-    for line in open(scales):
-        m = re.search(r"RESULT (\{.*\})", line)
-        if m:
-            d = json.loads(m.group(1))
-            ave[d["item"]] = d["ave_radio"]
-    k = {l.split()[0]: ast.literal_eval(l.split(" ", 1)[1])[0] for l in open(ks) if l.strip()}
-    return raw, ave, k
+    sc = json.load(open(scales))
+    return raw, {i: v["ave"] for i, v in sc.items()}, {i: v["k"] for i, v in sc.items()}
 
 
 def table(raw, ave, k):
@@ -43,8 +38,8 @@ def table(raw, ave, k):
     return rows
 
 
-def main(results, scales, ks):
-    rows = table(*load(results, scales, ks))
+def main(results, scales):
+    rows = table(*load(results, scales))
     print("item  raw_vol  s_paper  s_code  s_implied  APE_paper  APE_code  APE_published")
     for r in rows:
         print("%4s %8.4f %8.4f %7.4f %9.4f %9.2f %9.2f %10.2f" % r)

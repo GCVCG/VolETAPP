@@ -31,6 +31,8 @@ This repository is a snapshot of the VolETA code base (release 0.0.3, March 2025
 GNU General Public License v3.0 (see `LICENSE`), except for the third-party code below, which remains under the terms of its authors:
 
 - `src/pose/find_scale.py`, adapted from HR-CMS (see above).
+- `thesis-experiments/code/find_scale-headless.patch`, a change to that file, under the same terms.
+- `thesis-experiments/code/neus2-seed-headless.patch`, a change to NeuS2, which keeps the NVIDIA Source Code License of NeuS2 (and the BSD licence of pybind11 for its pybind11 lines).
 - `src/colmap2nerf.py`, from NVIDIA's [instant-ngp](https://github.com/NVlabs/instant-ngp) (`scripts/colmap2nerf.py`), which keeps its NVIDIA copyright notice and the [NVIDIA Source Code License](https://github.com/NVlabs/instant-ngp/blob/master/LICENSE.txt). Helper functions taken from the same script (for example `closest_point_2_lines`) also appear in `src/ARCORE_TO_NERF.py`, `src/ARCORE_TO_NERF_LOGMEAL.py` and `src/pose/pose_extraction.py`.
 - `src/colmap/read_write_model.py` and `src/colmap/read_write_dense.py`, from [COLMAP](https://github.com/colmap/colmap) (ETH Zurich and UNC Chapel Hill, BSD licence), which keep their copyright notices.
 

@@ -1,0 +1,113 @@
+--- src/pose/find_scale.py
++++ code/find_scale_headless.py
+@@ -49,6 +49,7 @@
+         near_pts_3d = self.find_space_pts_for_chessboard(self.chess_pts, reproj_pts, self.chess_name)
+         # 计算尺度
+         ave_radio, max_radio, min_radio = self.generate_scale_info(near_pts_3d, self.std_dist)
++        self.ave_radio, self.n_boards = ave_radio, len(self.chess_name)
+ 
+         print('1' * 100)
+         scale = 0.15
+@@ -59,11 +60,11 @@
+         print("MIN:{}".format(min_radio))
+         print("Scaling factor:{}".format(scaling_factor))
+ 
+-        self.show_merge_3d_pts(self.pts_3d, self.colors, near_pts_3d.reshape(-1, 3))
++        pass  # headless copy: display and file writes removed
+         # exit()
+         # 显示重投影结果
+         # idx 表示显示第几张图
+-        self.show_reproj_results(reproj_pts, self.chess_img, self.colors, idx=0)
++        pass  # headless copy: display and file writes removed
+ 
+     # 将空间点投影到图片中
+     # 使用GPU加速
+@@ -148,8 +149,8 @@
+             # cv2.waitKey(0)
+             # cv2.destroyAllWindows()
+             # 保存binary图像
+-            print(pth.replace("images", "binary"))
+-            cv2.imwrite(pth.replace("images", "binary"), binary)
++            pass  # headless copy: display and file writes removed
++            pass  # headless copy: display and file writes removed
+             chessboard_size = (self.chess_w, self.chess_h)
+             ret, corners = cv2.findChessboardCorners(binary, chessboard_size, flags=cv2.CALIB_CB_ADAPTIVE_THRESH +
+                                                                                     cv2.CALIB_CB_FAST_CHECK +
+@@ -157,7 +158,7 @@
+             if ret:
+                 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+                 corners = cv2.cornerSubPix(binary, corners, (11, 11), (-1, -1), criteria)
+-                print(corners)
++                pass  # headless copy: display and file writes removed
+                 # Manually draw circles at the corners with custom thickness
+                 for corner in corners:
+                     cv2.circle(cur_img, (int(corner[0][0]), int(corner[0][1])), radius=5, color=(255, 0, 0), thickness=10)
+@@ -172,10 +173,10 @@
+                 # 绘制并保存
+                 cv2.drawChessboardCorners(cur_img, chessboard_size, corners, ret)
+ 
+-                cv2.imshow("fnl", cv2.resize(cur_img, (720, 960)) )
+-                cv2.waitKey(0)
++                pass  # headless copy: display and file writes removed
++                pass  # headless copy: display and file writes removed
+ 
+-                cv2.imwrite(pth.replace("images", "chessboard"), cur_img)
++                pass  # headless copy: display and file writes removed
+ 
+         if len(useful_path) < 10:
+             print("The number of chessboards that can be detected is less than 15! Please readjust the threshold chess_T !")
+@@ -253,7 +254,7 @@
+         print("The number of points after downsampling is:", len(pcd.points))
+ 
+         # 保存一下将采样后的点云
+-        o3d.io.write_point_cloud(self.ply_root.replace(".ply", "_downsample.ply"), pcd)
++        pass  # headless copy: display and file writes removed
+         # 判断是否有颜色信息
+         if pcd.has_colors():
+             colors = np.asarray(pcd.colors)
+@@ -358,7 +359,7 @@
+             os.makedirs(save_pth, exist_ok=True)
+             file_Pth = os.path.join(Path(save_pth), Path(self.chess_name[idx]))
+             print(file_Pth)
+-            cv2.imwrite(file_Pth, cat_img)
++            pass  # headless copy: display and file writes removed
+     
+     # 根据每张图片算出的空间坐标点计算尺寸
+     def generate_scale_info(self, near_pts_3d, std_dist):
+@@ -416,26 +417,13 @@
+         pass
+         
+ if __name__ == "__main__":
+-
+-    system_param = {"data_root":"/home/amughrabi/projects/datasets/cvpr-metafood-3d-food-reconstruction-challenge/MTF_Challenge/MTF_Challenge/",
+-                    "save_root":"/home/amughrabi/projects/datasets/cvpr-metafood-3d-food-reconstruction-challenge/MTF_Challenge/MTF_Challenge/",
+-                    "data_name": "14",
+-                    "colmap_pth": "sparse",
+-                    "ply_name": "fused.ply",
+-                    "chess_h": 3,
+-                    "chess_w": 4,
+-                    "chess_T": 210,
+-                    "downsample": 0.3,
+-                    "std_size": 0.012}
+-
+-    # system_param = {"data_root":"/home/gaoyu/CVPR_Work/Apriltag_Calib",
+-    #                 "save_root":"/home/gaoyu/CVPR_Work/image_save",
+-    #                 "data_name": "apriltag_cube",
+-    #                 "colmap_pth": "sparse",
+-    #                 "ply_name": "fused.ply",
+-    #                 "chess_h": 8,
+-    #                 "chess_w": 11,
+-    #                 "chess_T": 150,
+-    #                 "std_size": 0.03}
+-     
+-    datascale = Generate_Real_Scale(system_param)
++    import argparse, json
++    p = argparse.ArgumentParser()
++    p.add_argument("--data_root"); p.add_argument("--item"); p.add_argument("--chess_T", type=int, default=240)
++    p.add_argument("--downsample", type=float, default=0.3)
++    a = p.parse_args()
++    o3d.utility.random.seed(0)
++    r = Generate_Real_Scale({"data_root": a.data_root, "save_root": a.data_root, "data_name": a.item, "colmap_pth": "sparse",
++                             "ply_name": "fused.ply", "chess_h": 3, "chess_w": 4, "chess_T": a.chess_T,
++                             "downsample": a.downsample, "std_size": 0.012})
++    print("RESULT", json.dumps({"item": a.item, "chess_T": a.chess_T, "ave_radio": r.ave_radio, "boards": r.n_boards}))

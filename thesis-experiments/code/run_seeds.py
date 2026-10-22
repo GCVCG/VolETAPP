@@ -1,26 +1,27 @@
-"""Repeatability of NeuS2 volumes across training seeds on the 13 multi-view MetaFood items.
+"""Run NeuS2 per configuration, item and seed on the 13 multi-view MetaFood items, and measure the volume.
 
-Option B of the thesis discussion (22 October 2026): the inputs are the prepared item folders
-(transforms.json with all frames, food-only RGBA images), not the exact published VolETA++
-configuration, so the result is the training-run component of repeatability, reported as the
-relative spread of the reconstructed volume. Scale is not applied: the relative spread is unit-free.
+Configurations (inputs and NeuS2 settings):
+  c1   an October 2024 working copy of the inputs (keyframes; all 199 frames for item 1), scene scale 0.33,
+       15,000 iterations, marching cubes 512
+  c2   the stored VolETA++ inputs: keyframe poses with the food images, scene scale 0.15, 15,000 at 512
+  c2t  the inputs of c2 with the settings of VolTex: 5,000 iterations, marching cubes 256
+  c3   the inputs of VolTex: the keyframes of c1 with the DEVA masks of VolTex (make_bundle.py), 5,000 at 256
+The volume is that of the closed pieces after removing pieces below 5% of the mesh diagonal, in NeuS2 units.
 
-usage: python run_seeds.py [--items 1 2 ...] [--seeds 1337 1 2 3 4] [--dry]
-Resumable: a (item, seed) pair with a row in results.csv is skipped.
+usage: python run_seeds.py --config c2 [--items 1 2 ...] [--seeds 1337 1 2 3 4] [--shard k/n] [--dry]
+       python run_seeds.py --config c2 --remeasure      (recompute the volumes of the meshes already run)
+Results: results.csv (c1) or results_<config>.csv; resumable: an (item, seed) pair already there is skipped.
 """
 import argparse, csv, fcntl, os, shutil, subprocess, sys, time
 
 ROOT = os.environ.get("SEEDS_ROOT", "/media/HDD_16TB/thesis-seeds")
-# C1: October 2024 working copy; C2: keyframes of the later workspace, as described in P4 (built by hand, see notes)
 DATA = {"c1": "/media/HDD_4TB_1/amughrabi/data/MTF_Challenge-20240418T205428Z-001/MTF_Challenge",
         "c2": f"{ROOT}/c2"}  # transforms_ref.json keyframe poses with the food images, NeuS2 scale 0.15
-# C2t: inputs of C2 with the NeuS2 settings of VolTex (P3-S7, P3-S8); C3: VolTex inputs, the keyframes of C1
-# with the DEVA masks of VolTex (make_bundle.py), same settings
 DATA.update({"c2t": DATA["c2"], "c3": f"{ROOT}/inputs/c3"})
 STEPS = {"c1": 15000, "c2": 15000, "c2t": 5000, "c3": 5000}
 RES = {"c1": 512, "c2": 512, "c2t": 256, "c3": 256}
-if "SEEDS_ROOT" in os.environ:  # cluster copy: both configurations under ROOT/inputs (make_bundle.py)
-    DATA = {c: f"{ROOT}/inputs/{c}" for c in DATA}
+if "SEEDS_ROOT" in os.environ:  # cluster copy: inputs under ROOT/inputs/<config> (make_bundle.py); c2t reads those of c2
+    DATA = {c: f"{ROOT}/inputs/{'c2' if c == 'c2t' else c}" for c in DATA}
 NEUS2 = f"{ROOT}/NeuS2-seed"
 PY_NEUS2 = os.environ.get("PY_NEUS2", os.path.expanduser("~/anaconda3/envs/neus2_voletar/bin/python"))
 PY_MESH = os.environ.get("PY_MESH", os.path.expanduser("~/anaconda3/envs/voletar/bin/python"))

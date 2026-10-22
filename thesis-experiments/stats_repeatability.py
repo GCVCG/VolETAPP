@@ -1,8 +1,8 @@
-"""Derived statistics of the unpublished repeatability experiment (Chapter 9, sec:unpublished).
+"""Derived statistics of the unpublished experiments of the thesis (Section 9.8; ledger IDs UR-*).
 
 Inputs (this folder): per-run volumes of NeuS2 reconstructions in NeuS2 units (closed pieces after the 5%
 clean-up), five runs per item; regenerated checkerboard scales and unit factors. Standard library only.
-Run: python3 notes/repeatability/stats_repeatability.py
+Run from this folder: python3 stats_repeatability.py
 """
 import csv, itertools, json, math, os, statistics as st, sys
 
@@ -71,13 +71,21 @@ def main():
           f"(MAPE VolTex 4.46 against VolETA++ 4.26: 0.20 points)")
     d = same_seed("runs_c2_3090.csv", "runs_c2_h200.csv")
     print(f"UR-R7 same item and seed, RTX 3090 against H200: {len(d)} pairs, median {st.median(d):.2f}%, max {max(d):.2f}%")
+    A, B = runs("runs_c2_3090.csv"), runs("runs_c2_h200.csv")
+    sg = [100 * (dict(B[i])[k] - v) / v for i in ITEMS for k, v in A.get(i, []) if k in dict(B.get(i, [])) and v > 0]
+    print(f"UR-R11 signed, H200 minus RTX 3090: mean {st.mean(sg):+.2f}% (SE {st.stdev(sg) / math.sqrt(len(sg)):.2f}), "
+          f"median {st.median(sg):+.2f}%, positive {sum(x > 0 for x in sg)} of {len(sg)}")
+    rows = list(csv.DictReader(open(os.path.join(HERE, "runs_c2_h200.csv"))))
+    opened = [r for r in rows if int(r["open_faces"]) > 0]
+    print(f"UR-R10 runs with an open surface left out: {len(opened)} of {len(rows)}, on "
+          f"{len({r['item'] for r in opened})} of 13 items")
     c1, cv1, ok1, f1 = summary("runs_c1_h100.csv")
     print(f"UR-R8 C1 (NeuS2 scale 0.33, H100): median CV {st.median(cv1.values()):.2f}, mean {st.mean(cv1.values()):.2f}; "
           f"failed runs {f1}; median CV without failed runs {st.median(ok1.values()):.2f}")
     s, phi = scales()
     mean_v = {i: st.mean(v for _, v in data[i]) for i in ITEMS}
     implied = {i: (GT[i] * 1e-6 / mean_v[i]) ** (1 / 3) for i in ITEMS}
-    print(f"UR-S1 threshold giving at least 10 boards: 240 on {sum(phi[i] == 240 for i in ITEMS)} items, "
+    print(f"UR-S1 threshold used (240 where it finds at least 10 boards, else the one finding the most): 240 on {sum(phi[i] == 240 for i in ITEMS)} items, "
           f"220 on {sum(phi[i] == 220 for i in ITEMS)}, 210 on {sum(phi[i] == 210 for i in ITEMS)}")
     print(f"UR-S2 regenerated scale (l / med(d), NeuS2 units): mean {st.mean(s.values()):.4f}, SD {st.stdev(s.values()):.4f}; "
           f"Table 4: {TABLE4_MEAN} ({TABLE4_SD})")
@@ -89,10 +97,11 @@ def main():
         for name, label in (("runs_c2t_mixed.csv", "C2t (VolTex settings)"), ("runs_c3_mixed.csv", "C3 (VolTex inputs and settings)")):
             if os.path.exists(os.path.join(HERE, name)):
                 _, c, _, f = summary(name)
-                print(f"UR-F0 {label}: median CV {st.median(c.values()):.2f}%, mean {st.mean(c.values()):.2f}%, failed runs {f}")
-        factor("runs_c2_h200.csv", "runs_c2t_mixed.csv", "training settings, VolETA++ (15,000 at 512) against VolTex (5,000 at 256), same inputs", "UR-F1")
+                print(f"UR-F0 {label}: median CV {st.median(c.values()):.2f}%, mean {st.mean(c.values()):.2f}%, failed runs {f}; "
+                      f"by item {{{', '.join(f'{i}: {c[i]:.1f}' for i in ITEMS)}}}")
+        factor("runs_c2_h200.csv", "runs_c2t_mixed.csv", "training settings, from VolTex (5,000 at 256, C2t) to VolETA++ (15,000 at 512, C2), same inputs", "UR-F1")
         if os.path.exists(os.path.join(HERE, "runs_c3_mixed.csv")):
-            factor("runs_c2t_mixed.csv", "runs_c3_mixed.csv", "masks and keyframes, stored (VolETA++) against DEVA (VolTex), VolTex settings", "UR-F2")
+            factor("runs_c2t_mixed.csv", "runs_c3_mixed.csv", "masks and keyframes, from DEVA (VolTex, C3) to stored (VolETA++, C2t), VolTex settings", "UR-F2")
     print(f"UR-S5 MAPE with regenerated scales on the C2 reconstructions: {st.mean(apes):.2f}% (published 4.26)")
 
 
