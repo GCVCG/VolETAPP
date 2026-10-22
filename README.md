@@ -12,6 +12,12 @@ This repository is a snapshot of the VolETA code base (release 0.0.3, March 2025
 - `src/`: pose conversion, checkerboard scaling (`src/pose/find_scale.py`), mesh clean-up, scaling and volume computation.
 - `docker/`: Dockerfiles for COLMAP, PixSfM, Pre-NeRF 360 and the VolETA environment (see `docker/README.md`).
 
+## Settings used in the paper
+
+- NeuS2: 15,000 iterations, marching-cubes resolution 512, and in each `transforms.json` `"aabb_scale": 1`, `"scale": 0.15`, `"offset": [0.5, 0.5, 0.5]` (`scripts/run_neus2.sh` uses these values).
+- Mesh clean-up: isolated pieces below 5% of the mesh diagonal are removed.
+- Scale: checkerboard squares of 0.012 m and a binarisation threshold of 240 for the corner detector (`src/pose/find_scale.py`). The threshold is sensitive: on some scenes the board is found in enough keyframes only at 210 to 220.
+
 ## Acknowledgement of third-party code
 
 `src/pose/find_scale.py` is adapted from the corner-matched scaling of the ININ-VIAUN team (HR-CMS in the MetaFood CVPR 2024 challenge report), published at [github.com/BITyia/cvpr-metafood](https://github.com/BITyia/cvpr-metafood) (`scale_estimate/find_scale.py`). Our changes add connected-component labelling and convex hulls to isolate the checkerboard before corner detection. The original repository states no licence; that file remains under its authors' terms and is not covered by the licence of this repository.

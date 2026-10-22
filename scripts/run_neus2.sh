@@ -17,7 +17,7 @@ echo "${DATASET_PATH}/transforms.json"
 START_TIME=$(date +%s)
 
 pushd NeuS2
-python -u scripts/run.py --scene "$DATASET_PATH/transforms.json" --name "$DATASET_NAME" --network dtu.json --n_steps 1000 --save_mesh --save_mesh_path "$DATASET_PATH"/"$DATASET_NAME".obj  --marching_cubes_res 256
+python -u scripts/run.py --scene "$DATASET_PATH/transforms.json" --name "$DATASET_NAME" --network dtu.json --n_steps 15000 --save_mesh --save_mesh_path "$DATASET_PATH"/"$DATASET_NAME".obj  --marching_cubes_res 512
 popd
 
 END_TIME=$(date +%s)
