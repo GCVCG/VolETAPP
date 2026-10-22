@@ -1,0 +1,110 @@
+diff --git a/dependencies/pybind11/include/pybind11/cast.h b/dependencies/pybind11/include/pybind11/cast.h
+index 4d3e9fa..1c00ba1 100644
+--- a/dependencies/pybind11/include/pybind11/cast.h
++++ b/dependencies/pybind11/include/pybind11/cast.h
+@@ -52,12 +52,13 @@ template <typename type> using make_caster = type_caster<intrinsic_t<type>>;
+ 
+ // Shortcut for calling a caster's `cast_op_type` cast operator for casting a type_caster to a T
+ template <typename T> typename make_caster<T>::template cast_op_type<T> cast_op(make_caster<T> &caster) {
+-    return caster.operator typename make_caster<T>::template cast_op_type<T>();
++    using result_t = typename make_caster<T>::template cast_op_type<T>; // nvcc 12 workaround
++    return caster.operator result_t();
+ }
+ template <typename T> typename make_caster<T>::template cast_op_type<typename std::add_rvalue_reference<T>::type>
+ cast_op(make_caster<T> &&caster) {
+-    return std::move(caster).operator
+-        typename make_caster<T>::template cast_op_type<typename std::add_rvalue_reference<T>::type>();
++    using result_t = typename make_caster<T>::template cast_op_type<typename std::add_rvalue_reference<T>::type>; // nvcc 12 workaround
++    return std::move(caster).operator result_t();
+ }
+ 
+ template <typename type> class type_caster<std::reference_wrapper<type>> {
+diff --git a/scripts/render_utils.py b/scripts/render_utils.py
+index f87d173..6dd4800 100644
+--- a/scripts/render_utils.py
++++ b/scripts/render_utils.py
+@@ -389,6 +389,7 @@ def render_img_training_view(args, testbed, log_ptr, image_dir, frame_time_id =
+             cy = (test_transforms['cy']) if 'cy' in test_transforms else (W / 2)
+             # load intrinsics
+             if 'fl_x' in test_transforms or 'fl_y' in test_transforms:
++                downscale = 1
+                 fl_x = (test_transforms['fl_x'] if 'fl_x' in test_transforms else test_transforms['fl_y']) / downscale
+                 fl_y = (test_transforms['fl_y'] if 'fl_y' in test_transforms else test_transforms['fl_x']) / downscale
+             elif 'camera_angle_x' in test_transforms or 'camera_angle_y' in test_transforms:
+@@ -421,4 +422,7 @@ def render_img_training_view(args, testbed, log_ptr, image_dir, frame_time_id =
+ 
+     return load_image(image), load_image(ref_image), normal_img
+ 
+-from pytorch3d_utils import *
++try:
++	from pytorch3d_utils import *
++except ImportError:  # thesis repeatability runs skip the evaluation that needs pytorch3d (--no_eval)
++	pass
+diff --git a/scripts/run.py b/scripts/run.py
+index 87eb0a4..95cd151 100644
+--- a/scripts/run.py
++++ b/scripts/run.py
+@@ -58,6 +58,8 @@ def parse_args():
+ 	parser.add_argument("--gui", action="store_true", help="Run the testbed GUI interactively.")
+ 	parser.add_argument("--train", action="store_true", help="If the GUI is enabled, controls whether training starts immediately.")
+ 	parser.add_argument("--n_steps", type=int, default=-1, help="Number of steps to train for before quitting.")
++	parser.add_argument("--no_eval", action="store_true", help="Skip rendering the training views after training (thesis repeatability runs).")
++	parser.add_argument("--seed", type=int, default=1337, help="Random seed of network initialisation and training (thesis repeatability runs).")
+ 
+ 	parser.add_argument("--sharpen", default=0, help="Set amount of sharpening applied to NeRF training images.")
+ 
+@@ -108,6 +110,7 @@ if __name__ == "__main__":
+ 	file_backup(args.output_path, network)
+ 
+ 	testbed = ngp.Testbed(mode)
++	testbed.seed = args.seed
+ 	testbed.nerf.sharpen = float(args.sharpen)
+ 
+ 	if mode == ngp.TestbedMode.Sdf:
+@@ -142,7 +145,8 @@ if __name__ == "__main__":
+ 			print(f"Generating mesh via marching cubes and saving to {args.save_mesh_path}. Resolution=[{res},{res},{res}]")
+ 			testbed.compute_and_save_marching_cubes_mesh(args.save_mesh_path, [res, res, res])
+ 			
+-		render_img_training_view(args, testbed, log_ptr, args.scene)
++		if not args.no_eval:
++			render_img_training_view(args, testbed, log_ptr, args.scene)
+ 
+ 	else:
+ 		ref_transforms = {}
+@@ -245,7 +249,8 @@ if __name__ == "__main__":
+ 
+ 		log_path = os.path.join(args.output_path, f"eval_log.txt")
+ 		log_ptr = open(log_path, "w+")
+-		render_img_training_view(args, testbed, log_ptr, args.scene)
++		if not args.no_eval:
++			render_img_training_view(args, testbed, log_ptr, args.scene)
+ 		
+ 
+ 
+diff --git a/src/python_api.cu b/src/python_api.cu
+index ad13ec2..586e989 100644
+--- a/src/python_api.cu
++++ b/src/python_api.cu
+@@ -407,6 +407,7 @@ PYBIND11_MODULE(pyngp, m) {
+ 		.def_readwrite("fixed_res_factor", &Testbed::m_fixed_res_factor)
+ 		.def_readwrite("background_color", &Testbed::m_background_color)
+ 		.def_readwrite("shall_train", &Testbed::m_train)
++		.def_readwrite("seed", &Testbed::m_seed) // thesis repeatability runs
+ 		.def_readwrite("shall_train_encoding", &Testbed::m_train_encoding)
+ 		.def_readwrite("shall_train_network", &Testbed::m_train_network)
+ 		.def_readwrite("render_groundtruth", &Testbed::m_render_ground_truth)
+diff --git a/src/render_buffer.cu b/src/render_buffer.cu
+index e8426c6..23cd940 100644
+--- a/src/render_buffer.cu
++++ b/src/render_buffer.cu
+@@ -30,7 +30,9 @@
+ 
+ #include <stb_image/stb_image.h>
+ 
+-#include <cuda_gl_interop.h>
++#ifdef NGP_GUI  // headless build: the OpenGL interop is used only by the GUI (thesis repeatability runs)
++#  include <cuda_gl_interop.h>
++#endif
+ 
+ using namespace Eigen;
+ using namespace tcnn;

@@ -12,6 +12,10 @@ This repository is a snapshot of the VolETA code base (release 0.0.3, March 2025
 - `src/`: pose conversion, checkerboard scaling (`src/pose/find_scale.py`), mesh clean-up, scaling and volume computation.
 - `docker/`: Dockerfiles for COLMAP, PixSfM, Pre-NeRF 360 and the VolETA environment (see `docker/README.md`).
 
+## Unpublished experiments of the thesis
+
+`thesis-experiments/` holds the code and per-run data of the additional, unpublished results in Section 9.8 of the candidate's doctoral thesis: the variation of the NeuS2 volume between training runs, the effect of the training settings and masks of VolTex and VolETA++, and a re-run of the scale step. They are not peer-reviewed.
+
 ## Settings used in the paper
 
 - NeuS2: 15,000 iterations, marching-cubes resolution 512, and in each `transforms.json` `"aabb_scale": 1`, `"scale": 0.15`, `"offset": [0.5, 0.5, 0.5]` (`scripts/run_neus2.sh` uses these values).
