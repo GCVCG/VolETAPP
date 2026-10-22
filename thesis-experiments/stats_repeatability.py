@@ -69,6 +69,8 @@ def main():
     rms = math.sqrt(st.mean(c ** 2 for c in cvs.values()))
     print(f"UR-R9 run-to-run SD of the mean error over 13 items, about RMS(CV) / sqrt(13): {rms / math.sqrt(13):.2f} points "
           f"(MAPE VolTex 4.46 against VolETA++ 4.26: 0.20 points)")
+    print(f"UR-R12 SD of the difference between two single-run MAPEs, about sqrt(2) times UR-R9: {math.sqrt(2) * rms / math.sqrt(13):.2f} points "
+          f"(P4 mask ablation: 6.10 against 4.26, 1.84 points)")
     d = same_seed("runs_c2_3090.csv", "runs_c2_h200.csv")
     print(f"UR-R7 same item and seed, RTX 3090 against H200: {len(d)} pairs, median {st.median(d):.2f}%, max {max(d):.2f}%")
     A, B = runs("runs_c2_3090.csv"), runs("runs_c2_h200.csv")
