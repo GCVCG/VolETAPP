@@ -129,10 +129,16 @@ def factor(name_a, name_b, label, uid):
         rel.append(100 * (st.mean(x) - st.mean(y)) / st.mean(y))
         ps.append(perm_p(x, y))
         ma.append(st.mean(x)); mb.append(st.mean(y))
-    n, w, p = wilcoxon_exact(ma, mb)
+    # across items on log ratios: each item has its own NeuS2 units, so raw volume differences are not comparable
+    n, w, p = wilcoxon_exact([math.log(a / b) for a, b in zip(ma, mb)], [0.0] * len(ma))
+    _, ca, _, _ = summary(name_a); _, cb, _, _ = summary(name_b)
+    na = {i: len([v for _, v in A[i] if v > 0]) for i in ITEMS}; nb = {i: len([v for _, v in B[i] if v > 0]) for i in ITEMS}
+    floor = st.median(math.sqrt(2 / math.pi) * math.sqrt(ca[i] ** 2 / na[i] + cb[i] ** 2 / nb[i]) for i in ITEMS)
     print(f"{uid} {label}: change of the mean volume by item (%): {[round(r, 1) for r in rel]}; median |change| "
           f"{st.median(abs(r) for r in rel):.2f}%, median {st.median(rel):+.2f}%; items with permutation p < 0.05: "
-          f"{sum(q < 0.05 for q in ps)} of 13; Wilcoxon over items n={n}, W+={w:g}, p={p:.4f}")
+          f"{sum(q < 0.05 for q in ps)} of 13; Wilcoxon over items on log ratios n={n}, W+={w:g}, p={p:.4f}; "
+          f"median absolute change expected from run-to-run variation alone (noise floor) {floor:.2f}%; "
+          f"lowered on {sum(r < 0 for r in rel)} of 13")
     return rel
 
 

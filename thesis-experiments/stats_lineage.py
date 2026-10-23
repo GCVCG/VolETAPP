@@ -150,8 +150,24 @@ def spearman_perm_p(x, y, b=10000, seed=0):
     return (hits + 1) / (b + 1)
 
 
+T975_12 = 2.178813  # 97.5% quantile of Student's t with 12 degrees of freedom (13 items)
+
+
+def t_ci(x):
+    """Mean and 95% t interval (n = 13). Percentile bootstrap intervals are too narrow with so few items."""
+    assert len(x) == 13
+    m = mean(x); half = T975_12 * sd(x) / len(x) ** 0.5
+    return m, m - half, m + half
+
+
 def extra():
     out = []
+    for name in APE:
+        m, lo, hi = t_ci(APE[name])
+        out.append(f'ST-1t MAPE {name}: {m:.2f}, 95% t interval [{lo:.2f}, {hi:.2f}]')
+    for new, old, tag in (('VolETA++', 'VolTex', 'ST-9t'), ('VolETA++', 'VolETA', 'ST-9bt')):
+        m, lo, hi = t_ci([a - b for a, b in zip(APE[new], APE[old])])
+        out.append(f'{tag} APE {new} minus {old}: mean {m:.2f} points, paired 95% t interval [{lo:.2f}, {hi:.2f}]')
     m, lo, hi = paired_bootstrap_ci(APE['VolETA++'], APE['VolTex'])
     out.append(f'ST-9 APE VolETA++ minus VolTex: mean {m:.2f} points, paired bootstrap 95% CI [{lo:.2f}, {hi:.2f}]')
     m, lo, hi = paired_bootstrap_ci(APE['VolETA++'], APE['VolETA'])
@@ -235,6 +251,8 @@ def signed():
                    f'median {sorted(e)[6]:+.2f}, over {over} under {13 - over}, Wilcoxon p = {p:.2f}, '
                    f'bootstrap 95% CI [{lo:+.2f}, {hi:+.2f}], 95% limits of agreement '
                    f'[{mean(e) - 1.96 * sd(e):+.1f}, {mean(e) + 1.96 * sd(e):+.1f}]')
+        _, tlo, thi = t_ci(e)
+        out.append(f'ST-12t {m} signed error: 95% t interval [{tlo:+.2f}, {thi:+.2f}]')
     t = 100 * (sum(PRED['VolETA']) - sum(GT13)) / sum(GT13)
     out.append(f'ST-12 VolETA total volume of the 13 items: {t:+.2f}%')
     for m, a in list(APE.items()) + list(APE_OTHER.items()):
@@ -256,6 +274,7 @@ if __name__ == '__main__':
     assert abs(wilcoxon_exact([2, 3, 4, 5, 6], [1, 1, 1, 1, 1])[2] - 2 / 32) < 1e-12
     assert round(mean(APE_OTHER['HR-CMS']), 2) == 14.47 and round(mean(APE_OTHER['GS-GP']), 2) == 10.26
     assert abs(spearman([1, 2, 3, 4], [10, 20, 30, 40]) - 1) < 1e-12
+    assert abs(t_ci([1.0] * 12 + [14.0])[0] - 2.0) < 1e-12  # mean of the t interval
     # Self-check: the signed errors reproduce the printed APE of P5 Table IV.
     for m, a in (('VolETA', APE['VolETA']), ('HR-CMS', APE_OTHER['HR-CMS']), ('GS-GP', APE_OTHER['GS-GP'])):
         assert [round(abs(100 * (p - g) / g), 2) for p, g in zip(PRED[m], GT13)] == a, m
