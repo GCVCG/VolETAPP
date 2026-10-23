@@ -137,7 +137,7 @@ def factor(name_a, name_b, label, uid):
     print(f"{uid} {label}: change of the mean volume by item (%): {[round(r, 1) for r in rel]}; median |change| "
           f"{st.median(abs(r) for r in rel):.2f}%, median {st.median(rel):+.2f}%; items with permutation p < 0.05: "
           f"{sum(q < 0.05 for q in ps)} of 13; Wilcoxon over items on log ratios n={n}, W+={w:g}, p={p:.4f}; "
-          f"median absolute change expected from run-to-run variation alone (noise floor) {floor:.2f}%; "
+          f"noise floor (mean absolute change expected on an item from run-to-run variation alone, median over items) {floor:.2f}%; "
           f"lowered on {sum(r < 0 for r in rel)} of 13")
     return rel
 
