@@ -1,6 +1,6 @@
 # Unpublished experiments of the doctoral thesis (October 2026)
 
-Additional results reported in Section 9.8 of the doctoral thesis of Ahmad AlMughrabi, *What You See Is What You Measure? Neural Scene Representations for Accurate Food Volume Estimation* (Universitat de Barcelona, 2026). **They are not published and have not been peer-reviewed.**
+Additional results reported in Appendix G of the doctoral thesis of Ahmad Sami Mohammad AlMughrabi, *What You See Is What You Measure? Neural Scene Representations for Accurate Food Volume Estimation* (Universitat de Barcelona, 2026). **They are not published and have not been peer-reviewed.**
 
 They concern the 13 multi-view items of the MetaFood CVPR 2024 challenge used by VolTex and VolETA++:
 
@@ -8,7 +8,7 @@ They concern the 13 multi-view items of the MetaFood CVPR 2024 challenge used by
 2. **Training settings and masks.** The same inputs with the NeuS2 settings of VolTex (5,000 iterations, 256), and the VolTex inputs (DEVA masks) with those settings, to separate the two factors in which VolTex and VolETA++ differ.
 3. **The scale step.** The released checkerboard scale step (`src/pose/find_scale.py`) re-run on the stored dense models.
 
-`python3 stats_repeatability.py`, run in this folder, prints every number of Section 9.8 from the files here, with the identifiers (UR-...) of the thesis's fact ledger (standard library only; it uses the exact Wilcoxon test of `stats_lineage.py`, the statistics script of the thesis, copied unchanged).
+`python3 stats_repeatability.py`, run in this folder, prints every number of Appendix G from the files here (and those of the training-settings and masks configurations, UR-F*, which the thesis no longer reports), with the identifiers (UR-...) of the thesis's fact ledger (standard library only; it uses the exact Wilcoxon test of `stats_lineage.py`, the statistics script of the thesis, copied unchanged).
 
 ## Files
 
